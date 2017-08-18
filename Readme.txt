@@ -1,1 +1,1 @@
-Se realiza el programa a partir de la Discovery Board STM32F072RBT6, con el fin de poder probarlo en primero instancia.
+Se realiza el programa a partir de la Discovery Board STM32F072RBT6, con el fin de poder probarlo en primera instancia.
