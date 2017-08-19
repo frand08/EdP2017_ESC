@@ -35,6 +35,12 @@
 #include "stm32f0xx_hal.h"
 
 /* USER CODE BEGIN Includes */
+#define STATE_STEP0				0
+#define STATE_STEP1				1
+#define STATE_STEP2				2
+#define STATE_STEP3				3
+#define STATE_STEP4				4
+#define STATE_STEP5				5
 
 /* USER CODE END Includes */
 
@@ -56,7 +62,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
-
+void Conmutacion(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -83,7 +89,12 @@ int main(void)
   MX_TIM1_Init();
 
   /* USER CODE BEGIN 2 */
-
+  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,50);
+  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,50);
+  __HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,50);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -93,6 +104,8 @@ int main(void)
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
+	  Conmutacion();
+	  HAL_Delay(1);
 
   }
   /* USER CODE END 3 */
@@ -174,7 +187,7 @@ static void MX_TIM1_Init(void)
   }
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
+  sConfigOC.Pulse = 30;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
@@ -301,14 +314,87 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : C_BEMF_Pin B_BEMF_Pin A_BEMF_Pin */
   GPIO_InitStruct.Pin = C_BEMF_Pin|B_BEMF_Pin|A_BEMF_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI4_15_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
 
 }
 
 /* USER CODE BEGIN 4 */
-
+void Conmutacion(void)
+{
+	static int Estado_Conmutacion = STATE_STEP0;
+	switch(Estado_Conmutacion)
+	{
+		case STATE_STEP0:
+			HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_1);
+			HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_2);
+			HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_3);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_12,0);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_11,1);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_10,0);
+			Estado_Conmutacion = STATE_STEP1;
+			break;
+		case STATE_STEP1:
+			HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_1);
+			HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_2);
+			HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_3);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_12,0);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_11,0);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_10,1);
+			Estado_Conmutacion = STATE_STEP2;
+			break;
+		case STATE_STEP2:
+			HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_1);
+			HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_2);
+			HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_3);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_12,0);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_11,0);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_10,1);
+			Estado_Conmutacion = STATE_STEP3;
+			break;
+		case STATE_STEP3:
+			HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_1);
+			HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_2);
+			HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_3);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_12,1);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_11,0);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_10,0);
+			Estado_Conmutacion = STATE_STEP4;
+			break;
+		case STATE_STEP4:
+			HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_1);
+			HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_2);
+			HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_3);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_12,1);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_11,0);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_10,0);
+			Estado_Conmutacion = STATE_STEP5;
+			break;
+		case STATE_STEP5:
+			HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_1);
+			HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_2);
+			HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_3);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_12,0);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_11,1);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_10,0);
+			Estado_Conmutacion = STATE_STEP0;
+			break;
+		default:
+			HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_1);
+			HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_2);
+			HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_3);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_12,0);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_11,1);
+			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_10,0);
+			Estado_Conmutacion = STATE_STEP1;
+			break;
+	}
+}
 /* USER CODE END 4 */
 
 /**
