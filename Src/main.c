@@ -62,7 +62,9 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
-void Conmutacion(void);
+void Conmutation(void);
+void SetDutyCycle(uint8_t);
+void StartMotor(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -104,7 +106,7 @@ int main(void)
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
-	  Conmutacion();
+	  Conmutation();
 	  HAL_Delay(1);
 
   }
@@ -325,7 +327,12 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void Conmutacion(void)
+/**
+  * @fn void Conmutation(void)
+  * @brief Genera el próximo paso del motor, en base al estado anterior.
+  * @param none
+  */
+void Conmutation(void)
 {
 	static int Estado_Conmutacion = STATE_STEP0;
 	switch(Estado_Conmutacion)
@@ -394,6 +401,28 @@ void Conmutacion(void)
 			Estado_Conmutacion = STATE_STEP1;
 			break;
 	}
+}
+
+/**
+  * @fn void StartMotor(void)
+  * @brief Genera el arranque del motor a lazo abierto. Luego de este, a partir de la BEMF se deberían generar los pasos.
+  * @param none
+  */
+void StartMotor(void)
+{
+
+}
+
+/**
+  * @fn void SetDutyCycle(uint8_t duty)
+  * @brief Setea el duty deseado para los tres PWM.
+  * @param duty porcentaje de ancho de pulso que se desea
+  */
+void SetDutyCycle(uint8_t duty)
+{
+	__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,duty);
+	__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,duty);
+	__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3,duty);
 }
 /* USER CODE END 4 */
 
